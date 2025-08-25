@@ -4,9 +4,10 @@ import type { Request, Response } from "express";
 const app = express();
 
 const port = process.env.PORT || 3000;
+const openaiKey = process.env.OPENAI_API_KEY;
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Hello World!");
+  res.send("hello world");
 });
 
 app.listen(port, () => {
