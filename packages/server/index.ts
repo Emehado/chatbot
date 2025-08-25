@@ -2,6 +2,7 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import OpenAI from 'openai';
 import z from 'zod';
+import { conversationRepository } from './repositories/conversation.repository';
 
 const openaiKey = process.env.OPENAI_API_KEY;
 const client = new OpenAI({
@@ -30,7 +31,6 @@ const chatSchema = z.object({
   conversationId: z.uuid(),
 });
 
-const conversations = new Map<string, string>();
 app.post('/api/chat', async (req: Request, res: Response) => {
   const parseResult = chatSchema.safeParse(req.body);
   if (!parseResult.success) {
@@ -45,10 +45,11 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       model: 'gpt-4o-mini',
       temperature: 0.2,
       max_output_tokens: 100,
-      previous_response_id: conversations.get(conversationId),
+      previous_response_id:
+        conversationRepository.getLastResponseId(conversationId),
     });
 
-    conversations.set(conversationId, response.id);
+    conversationRepository.setLastResponseId(conversationId, response.id);
 
     res.json({ message: response.output_text });
   } catch (error) {
