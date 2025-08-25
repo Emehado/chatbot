@@ -1,17 +1,59 @@
 import express from 'express';
 import type { Request, Response } from 'express';
+import OpenAI from 'openai';
+import z from 'zod';
+
+const openaiKey = process.env.OPENAI_API_KEY;
+const client = new OpenAI({
+  apiKey: openaiKey,
+});
 
 const app = express();
+app.use(express.json());
 
 const port = process.env.PORT || 3000;
-const openaiKey = process.env.OPENAI_API_KEY;
 
 app.get('/', (req: Request, res: Response) => {
   res.send('hello world');
 });
 
-app.get('/api/hello', (req, res) => {
+app.get('/api/hello', (req: Request, res: Response) => {
   res.json({ message: 'Hello World' });
+});
+
+const chatSchema = z.object({
+  prompt: z
+    .string()
+    .trim()
+    .min(1, 'Prompt is required')
+    .max(1000, 'Prompt is too large (max 1000 characters)'),
+  conversationId: z.uuid(),
+});
+
+const conversations = new Map<string, string>();
+app.post('/api/chat', async (req: Request, res: Response) => {
+  const parseResult = chatSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    res.status(400).json(z.treeifyError(parseResult.error));
+    return;
+  }
+  try {
+    const { prompt, conversationId } = req.body;
+
+    const response = await client.responses.create({
+      input: prompt,
+      model: 'gpt-4o-mini',
+      temperature: 0.2,
+      max_output_tokens: 100,
+      previous_response_id: conversations.get(conversationId),
+    });
+
+    conversations.set(conversationId, response.id);
+
+    res.json({ message: response.output_text });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate AI response' });
+  }
 });
 
 app.listen(port, () => {
