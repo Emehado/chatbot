@@ -12,7 +12,9 @@ function App() {
 
   return (
     <>
-      <p>{message}</p>
+      <p className="font-bold text-amber-300 bg-indigo-400 p-4 text-3xl">
+        {message}
+      </p>
     </>
   );
 }
