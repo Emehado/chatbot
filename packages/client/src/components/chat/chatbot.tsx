@@ -5,6 +5,13 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import TypingIndicator from './typing-indicator';
 import ChatMessages, { type Message } from './chat-messages';
 import ChatInput, { type ChatFormData } from './chat-input';
+import lightButtonSound from '@/assets/sounds/light-button.wav';
+import longPop from '@/assets/sounds/long-pop.wav';
+
+const botResponseSound = new Audio(lightButtonSound);
+botResponseSound.volume = 0.2;
+const sendMessageSound = new Audio(longPop);
+sendMessageSound.volume = 0.2;
 
 type ChatResponse = {
   message: string;
@@ -20,6 +27,7 @@ const Chatbot = () => {
     try {
       setError('');
       setMessages((prev) => [...prev, { content: prompt, role: 'user' }]);
+      sendMessageSound.play();
 
       setIsBotTyping(true);
       const response = await axios.post<ChatResponse>('/api/chat', {
@@ -31,6 +39,7 @@ const Chatbot = () => {
         ...prev,
         { content: response.data.message, role: 'bot' },
       ]);
+      botResponseSound.play();
     } catch (error) {
       console.error(error);
       setError(
